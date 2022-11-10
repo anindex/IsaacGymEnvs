@@ -44,12 +44,13 @@ from .humanoid_amp import HumanoidAMP
 from .ingenuity import Ingenuity
 from .quadcopter import Quadcopter
 from .shadow_hand import ShadowHand
-from .allegro_hand import AllegroHand
+from .allegro_hand import AllegroHand, AllegroHandQPos
 from .trifinger import Trifinger
 
 # Mappings from strings to environments
 isaacgym_task_map = {
     "AllegroHand": AllegroHand,
+    "AllegroHandQPos": AllegroHandQPos,
     "Ant": Ant,
     "Anymal": Anymal,
     "AnymalTerrain": AnymalTerrain,

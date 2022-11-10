@@ -691,6 +691,35 @@ class AllegroHand(VecTask):
                 self.gym.add_lines(self.viewer, self.envs[i], 1, [p0[0], p0[1], p0[2], objecty[0], objecty[1], objecty[2]], [0.1, 0.85, 0.1])
                 self.gym.add_lines(self.viewer, self.envs[i], 1, [p0[0], p0[1], p0[2], objectz[0], objectz[1], objectz[2]], [0.1, 0.1, 0.85])
 
+
+class AllegroHandQPos(AllegroHand):
+
+    def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render):
+        super().__init__(cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render)
+    
+    def pre_physics_step(self, actions):
+        env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+        goal_env_ids = self.reset_goal_buf.nonzero(as_tuple=False).squeeze(-1)
+
+        # if only goals need reset, then call set API
+        if len(goal_env_ids) > 0 and len(env_ids) == 0:
+            self.reset_target_pose(goal_env_ids, apply_reset=True)
+
+        # if goals need reset in addition to other envs, call set API in reset()
+        elif len(goal_env_ids) > 0:
+            self.reset_target_pose(goal_env_ids)
+
+        if len(env_ids) > 0:
+            self.reset_idx(env_ids, goal_env_ids)
+
+        self.actions = actions.clone().to(self.device)
+        
+        # apply position target
+        self.cur_targets[:, self.actuated_dof_indices] = tensor_clamp(self.actions,
+                                                                      self.shadow_hand_dof_lower_limits[self.actuated_dof_indices], self.shadow_hand_dof_upper_limits[self.actuated_dof_indices])
+        self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(self.cur_targets))
+
+
 #####################################################################
 ###=========================jit functions=========================###
 #####################################################################
